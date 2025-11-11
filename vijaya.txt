@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Lab Simulation – Engineering Physics</title>
+    <!-- 1. Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Load Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- 3. Custom Styles for Dark/Neon Theme -->
+    <style>
+        /* Apply Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a1a; /* Dark violet-blue background */
+        }
+
+        /* --- Page Container --- */
+        .page {
+            display: none; /* Hide pages by default */
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .page.active {
+            display: block; /* Show active page */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Home Page 3D Atom Animation --- */
+        .atom-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+        .atom {
+            position: absolute;
+            background-color: rgba(99, 102, 241, 0.2); /* Neon violet/blue */
+            border-radius: 50%;
+            animation: move 20s infinite linear;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5), 0 0 25px rgba(99, 102, 241, 0.3);
+        }
+        .atom:nth-child(1) { width: 60px; height: 60px; left: 10%; animation-duration: 15s; }
+        .atom:nth-child(2) { width: 30px; height: 30px; left: 30%; animation-duration: 20s; animation-delay: 2s; }
+        .atom:nth-child(3) { width: 80px; height: 80px; left: 50%; animation-duration: 25s; animation-delay: 5s; }
+        .atom:nth-child(4) { width: 40px; height: 40px; left: 70%; animation-duration: 18s; animation-delay: 3s; }
+        .atom:nth-child(5) { width: 50px; height: 50px; left: 90%; animation-duration: 22s; animation-delay: 7s; }
+
+        @keyframes move {
+            0% { transform: translateY(100vh); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh); opacity: 0; }
+        }
+
+        /* --- Neon Glow Effects --- */
+        .neon-text {
+            color: #e0e0ff;
+            text-shadow: 0 0 5px rgba(167, 139, 250, 0.8), 0 0 10px rgba(167, 139, 250, 0.6);
+        }
+        .neon-button {
+            background-color: rgba(99, 102, 241, 0.8); /* Indigo */
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.7), 0 0 20px rgba(99, 102, 241, 0.5);
+        }
+        .neon-button:hover {
+            background-color: rgba(129, 140, 248, 1);
+            box-shadow: 0 0 15px rgba(129, 140, 248, 0.9), 0 0 30px rgba(129, 140, 248, 0.7);
+        }
+        
+        .neon-button-secondary {
+            background-color: transparent;
+            border: 1px solid rgba(99, 102, 241, 0.8);
+            color: rgba(129, 140, 248, 1);
+            transition: all 0.3s ease;
+        }
+        .neon-button-secondary:hover {
+            background-color: rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Experiment Card Glow */
+        .experiment-card {
+            background-color: rgba(23, 23, 45, 0.7); /* Darker card bg */
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        .experiment-card:hover {
+            transform: translateY(-5px) scale(1.03);
+            border-color: rgba(129, 140, 248, 0.8);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+        }
+        
+        /* Form Input Styling */
+        .form-input {
+            background-color: rgba(30, 30, 50, 0.8);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: white;
+        }
+        .form-input:focus {
+            background-color: rgba(40, 40, 60, 0.9);
+            border-color: rgba(129, 140, 248, 1);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+            outline: none;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.6);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(129, 140, 248, 0.8);
+        }
+    </style>
+</head>
+
+<body class="text-gray-200">
+
+    <!-- 4. Header & Navigation -->
+    <header class="sticky top-0 z-50 bg-gray-900/70 backdrop-blur-md border-b border-indigo-500/30">
+        <nav class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo/Title -->
+                <div class="flex-shrink-0">
+                    <a href="#" class="text-2xl font-bold neon-text" onclick="showPage('home')">
+                        Virtual Lab
+                    </a>
+                </div>
+                
+                <!-- Desktop Nav Links -->
+                <div class="hidden md:flex md:items-center md:space-x-6">
+                    <a href="#" class="nav-link text-gray-300 hover:text-white" onclick="showPage('home')">Home</a>
+                    <a href="#" class="nav-link text-gray-300 hover:text-white" onclick="showPage('experiments')">Experiments</a>
+                    <a href="#" class="nav-link text-gray-300 hover:text-white" onclick="showPage('theory')">Theory</a>
+                    <a href="#" class="nav-link text-gray-300 hover:text-white" onclick="showPage('about')">About</a>
+                    <a href="#" class="nav-link text-gray-300 hover:text-white" onclick="showPage('contact')">Contact</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-300 hover:text-white p-2 rounded-md">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Mobile Menu (Dropdown) -->
+        <div id="mobile-menu" class="hidden md:hidden bg-gray-900/90 border-t border-indigo-500/30">
+            <a href="#" class="block px-4 py-3 text-base text-gray-300 hover:bg-indigo-900/50" onclick="showPage('home')">Home</a>
+            <a href="#" class="block px-4 py-3 text-base text-gray-300 hover:bg-indigo-900/50" onclick="showPage('experiments')">Experiments</a>
+            <a href="#" class="block px-4 py-3 text-base text-gray-300 hover:bg-indigo-900/50" onclick="showPage('theory')">Theory</a>
+            <a href="#" class="block px-4 py-3 text-base text-gray-300 hover:bg-indigo-900/50" onclick="showPage('about')">About</a>
+            <a href="#" class="block px-4 py-3 text-base text-gray-300 hover:bg-indigo-900/50" onclick="showPage('contact')">Contact</a>
+        </div>
+    </header>
+
+    <!-- 5. Main Content Area (Page Container) -->
+    <main class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- ===== HOME PAGE ===== -->
+        <div id="home-page" class="page active">
+            <div class="relative h-[70vh] flex items-center justify-center text-center overflow-hidden rounded-lg">
+                <!-- Animated Background -->
+                <div class="atom-background">
+                    <div class="atom"></div>
+                    <div class="atom"></div>
+                    <div class="atom"></div>
+                    <div class="atom"></div>
+                    <div class="atom"></div>
+                </div>
+                
+                <!-- Content -->
+                <div class="relative z-10 p-6 bg-black/30 backdrop-blur-sm rounded-lg">
+                    <h1 class="text-4xl md:text-6xl font-bold neon-text mb-4">
+                        Virtual Lab Simulation
+                    </h1>
+                    <h2 class="text-2xl md:text-3xl font-light text-indigo-200 mb-6">
+                        For Engineering Physics
+                    </h2>
+                    <p class="text-lg text-gray-300 max-w-2xl mx-auto mb-8">
+                        Explore, visualize, and simulate complex physics experiments from anywhere. Our virtual lab brings theoretical concepts to life with interactive 3D models and clear explanations.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button class="px-8 py-3 rounded-lg font-semibold neon-button" onclick="showPage('experiments')">
+                            Explore Experiments
+                        </button>
+                        <button class="px-8 py-3 rounded-lg font-semibold neon-button-secondary" onclick="showPage('theory')">
+                            Learn Theory
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== EXPERIMENTS PAGE ===== -->
+        <div id="experiments-page" class="page">
+            <h1 class="text-3xl md:text-4xl font-bold neon-text mb-8 text-center">Physics Experiments</h1>
+            
+            <!-- Search Box -->
+            <div class="mb-8 max-w-2xl mx-auto">
+                <input type="text" id="search-box" placeholder="Search for an experiment..."
+                       class="w-full px-5 py-3 rounded-lg form-input text-lg">
+            </div>
+
+            <!-- Experiment Grid -->
+            <div id="experiment-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards will be injected here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- ===== EXPERIMENT DETAIL PAGE ===== -->
+        <div id="experiment-detail-page" class="page">
+            <button class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold neon-button-secondary mb-6" onclick="showPage('experiments')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                Back to Experiments
+            </button>
+
+            <h1 id="detail-title" class="text-3xl md:text-4xl font-bold neon-text mb-8"></h1>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column (Content) -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="p-6 rounded-lg bg-gray-800/50 border border-indigo-500/30">
+                        <h2 class="text-2xl font-semibold text-indigo-300 mb-3">Aim / Objective</h2>
+                        <p id="detail-aim"></p>
+                    </div>
+                    
+                    <div class="p-6 rounded-lg bg-gray-800/50 border border-indigo-500/30">
+                        <h2 class="text-2xl font-semibold text-indigo-300 mb-3">Apparatus Used</h2>
+                        <p id="detail-apparatus"></p>
+                    </div>
+
+                    <div class="p-6 rounded-lg bg-gray-800/50 border border-indigo-500/30">
+                        <h2 class="text-2xl font-semibold text-indigo-300 mb-3">Theory</h2>
+                        <p id="detail-theory" class="leading-relaxed"></p>
+                    </div>
+
+                    <div class="p-6 rounded-lg bg-gray-800/50 border border-indigo-500/30">
+                        <h2 class="text-2xl font-semibold text-indigo-300 mb-3">Formulae</h2>
+                        <div id="detail-formulae" class="text-lg font-mono bg-gray-900/70 p-4 rounded-md"></div>
+                    </div>
+                    
+                    <div class="p-6 rounded-lg bg-gray-800/50 border border-indigo-500/30">
+                        <h2 class="text-2xl font-semibold text-indigo-300 mb-3">Procedure</h2>
+                        <div id="detail-procedure" class="leading-relaxed space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Right Column (Simulation & Details) -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- 3D Simulation Placeholder -->
+                    <div class="p-6 rounded-lg bg-gray-800/50 border border-indigo-500/30">
+                        <h2 class="text-2xl font-semibold text-indigo-300 mb-3">Simulation</h2>
+                        <div id="detail-simulation" class="w-full h-64 bg-gray-900 rounded-md flex items-center justify-center text-gray-500">
+                            [Interactive 3D Simulation Placeholder]
+                        </div>
+                        <button class="w-full mt-4 px-4 py-2 rounded-lg font-semibold neon-button" onclick="showMessage('Simulation not yet implemented.')">
+                            Launch Simulation
+                        </button>
+                    </div>
+                    
+                    <div class="p-6 rounded-lg bg-gray-800/50 border border-indigo-500/30">
+                        <h2 class="text-2xl font-semibold text-indigo-300 mb-3">Observations</h2>
+                        <p id="detail-observations"></p>
+                    </div>
+
+                    <div class="p-6 rounded-lg bg-gray-800/50 border border-indigo-500/30">
+                        <h2 class="text-2xl font-semibold text-indigo-300 mb-3">Result & Conclusion</h2>
+                        <p id="detail-result"></p>
+                    </div>
+
+                    <div class="p-6 rounded-lg bg-gray-800/50 border border-indigo-500/30">
+                        <h2 class="text-2xl font-semibold text-indigo-300 mb-3">Precautions</h2>
+                        <ul id="detail-precautions" class="list-disc list-inside space-y-1"></ul>
+                    </div>
+                    
+                    <button class="w-full px-4 py-2 rounded-lg font-semibold neon-button-secondary" onclick="showMessage('Lab report download is not available in this demo.')">
+                        Download Lab Report (PDF)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== THEORY PAGE ===== -->
+        <div id="theory-page" class="page">
+            <h1 class="text-3xl md:text-4xl font-bold neon-text mb-8 text-center">Theory & Formulae</h1>
+            <div id="theory-content" class="space-y-6 max-w-3xl mx-auto">
+                <!-- Theory content will be injected by JS -->
+            </div>
+        </div>
+
+        <!-- ===== ABOUT PAGE ===== -->
+        <div id="about-page" class="page">
+            <h1 class="text-3xl md:text-4xl font-bold neon-text mb-8 text-center">About This Project</h1>
+            <div class="max-w-3xl mx-auto p-6 md:p-8 rounded-lg bg-gray-800/50 border border-indigo-500/30 space-y-4 leading-relaxed text-lg">
+                <p>The <strong>Virtual Physics Lab</strong> is an initiative designed to bridge the gap between theoretical knowledge and practical application for engineering students. Our goal is to provide an accessible, interactive, and engaging platform where students can learn, practice, and master key physics experiments without the constraints of a physical laboratory.</p>
+                <p>We believe that visualization is key to understanding complex concepts. By using 3D simulations and clear, step-by-step guidance, we aim to make learning physics more intuitive, effective, and fun.</p>
+                <h2 class="text-2xl font-semibold text-indigo-300 pt-4">Benefits for Students:</h2>
+                <ul class="list-disc list-inside space-y-2">
+                    <li><strong>Learn Anywhere, Anytime:</strong> Access labs 24/7 from any device.</li>
+                    <li><strong>Safe Environment:</strong> Perform experiments without risk of equipment damage or personal injury.</li>
+                    <li><strong>Repeat & Master:</strong> Redo experiments as many times as needed to understand the concepts fully.</li>
+                    <li><strong>Visualize the Abstract:</strong> See phenomena like the Hall Effect or light diffraction in action.</li>
+                    <li><strong>Clear Guidance:</strong> Follow detailed procedures, understand the theory, and see sample results.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ===== CONTACT PAGE ===== -->
+        <div id="contact-page" class="page">
+            <h1 class="text-3xl md:text-4xl font-bold neon-text mb-8 text-center">Contact Us</h1>
+            <div class="max-w-xl mx-auto p-6 md:p-8 rounded-lg bg-gray-800/50 border border-indigo-500/30">
+                <p class="text-center text-gray-300 mb-6">Have a question, suggestion, or bug report? Fill out the form below to get in touch with our team.</p>
+                <form id="contact-form" class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-indigo-200 mb-1">Name</label>
+                        <input type="text" id="name" name="name" required class="w-full px-4 py-2 rounded-md form-input">
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-indigo-200 mb-1">Email</label>
+                        <input type="email" id="email" name="email" required class="w-full px-4 py-2 rounded-md form-input">
+                    </div>
+                    <div>
+                        <label for="message" class="block text-sm font-medium text-indigo-200 mb-1">Message</label>
+                        <textarea id="message" name="message" rows="5" required class="w-full px-4 py-2 rounded-md form-input"></textarea>
+                    </div>
+                    <div>
+                        <button type="submit" class="w-full px-6 py-3 rounded-lg font-semibold neon-button">
+                            Send Message
+                        </button>
+                    </div>
+                </form>
+                <p id="form-status" class="text-center text-green-400 mt-4"></p>
+            </div>
+        </div>
+        
+        <!-- Custom Message Modal -->
+        <div id="message-modal" classs="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+             <div class="bg-gray-800 border border-indigo-500/50 rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+                 <p id="modal-message-text" class="text-lg text-gray-200 mb-4"></p>
+                 <button id="modal-close-button" class="px-6 py-2 rounded-lg font-semibold neon-button">
+                     Close
+                 </button>
+             </div>
+        </div>
+
+    </main>
+
+    <!-- 6. Footer -->
+    <footer class="border-t border-indigo-500/30 mt-16">
+        <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 text-center text-gray-500">
+            <p>&copy; 2025 Virtual Lab Simulation. All rights reserved.</p>
+            <p>An educational project for Engineering Physics students.</p>
+        </div>
+    </footer>
+
+
+    <!-- 7. JavaScript -->
+    <script>
+        // --- Experiment Database ---
+        const experimentData = {
+            newtonsRings: {
+                title: "Newton's Rings",
+                aim: "To determine the wavelength of sodium light using Newton's rings.",
+                apparatus: "A plano-convex lens of long focal length, an optically flat glass plate, a sodium vapour lamp, a traveling microscope.",
+                theory: "Newton's rings is a phenomenon of interference of light. When a plano-convex lens is placed on a flat glass plate, a thin air film is formed between them. When this film is illuminated by monochromatic light, concentric bright and dark interference fringes, called Newton's rings, are observed.",
+                formulae: "λ = (D_n^2 - D_m^2) / (4 * R * (n - m))",
+                procedure: `
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li>Clean the lens and glass plate thoroughly.</li>
+                        <li>Place the lens on the glass plate and set up the apparatus under the microscope.</li>
+                        <li>Turn on the sodium lamp and adjust the microscope to observe clear, concentric rings.</li>
+                        <li>Measure the diameter of the 10th, 8th, 6th, etc., dark rings.</li>
+                        <li>Plot a graph of D_n^2 vs. n (ring number) and find the slope.</li>
+                        <li>Calculate the wavelength λ using the formula.</li>
+                    </ol>
+                `,
+                observations: "The rings are circular and concentric. The center is dark. Rings get closer as they move outwards.",
+                result: "The wavelength of the sodium light was found to be [Your Value] nm.",
+                precautions: [
+                    "The lens and glass plate must be perfectly clean.",
+                    "The light should fall normally on the lens.",
+                    "Parallax error should be removed while taking readings."
+                ]
+            },
+            diffractionGrating: {
+                title: "Diffraction Grating",
+                aim: "To determine the wavelength of a laser light source using a diffraction grating.",
+                apparatus: "A laser source (e.g., He-Ne laser), a diffraction grating, an optical bench, a screen.",
+                theory: "A diffraction grating is an optical component with a periodic structure that splits and diffracts light into several beams traveling in different directions. The directions of these beams depend on the spacing of the grating and the wavelength of the light.",
+                formulae: "d * sin(θ) = n * λ",
+                procedure: `
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li>Set up the laser and grating on the optical bench.</li>
+                        <li>Align the laser beam to be perpendicular to the grating.</li>
+                        <li>Observe the diffraction pattern (central maximum and side maxima) on the screen.</li>
+                        <li>Measure the distance (D) from the grating to the screen.</li>
+                        <li>Measure the distance (x) of the first-order (n=1) and second-order (n=2) maxima from the central spot.</li>
+                        <li>Calculate the angle θ using tan(θ) = x / D.</li>
+                        <li>Calculate λ using the grating formula. (d = 1 / N, where N is lines per meter).</li>
+                    </ol>
+                `,
+                observations: "A central bright spot (n=0) is observed, with dimmer spots (n=1, n=2, ...) on either side.",
+                result: "The wavelength of the laser light was found to be [Your Value] nm.",
+                precautions: [
+                    "Do not look directly into the laser beam.",
+                    "Ensure the laser is normal to the grating.",
+                    "Measure distances accurately."
+                ]
+            },
+            photoelectricEffect: {
+                title: "Photoelectric Effect",
+                aim: "To determine Planck's constant (h) using the photoelectric effect.",
+                apparatus: "A photoelectric cell (vacuum phototube), various color filters, a light source (e.g., mercury lamp), a voltmeter, an ammeter.",
+                theory: "The photoelectric effect is the emission of electrons when light shines on a material. Einstein explained it by proposing that light consists of quanta (photons). The energy of a photon is E = hf. The maximum kinetic energy of an emitted electron is K_max = hf - Φ, where Φ is the work function.",
+                formulae: "K_max = e * V_s = hf - Φ",
+                procedure: `
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li>Set up the apparatus in a dark room.</li>
+                        <li>Shine light from the source through a filter of a known frequency (f) onto the photocell.</li>
+                        <li>Apply a reverse (negative) voltage to the anode and adjust it until the photocurrent becomes zero. This is the stopping potential (V_s).</li>
+                        <li>Record V_s for different frequencies (different filters).</li>
+                        <li>Plot a graph of V_s (y-axis) vs. f (x-axis).</li>
+                        <li>The graph will be a straight line. The slope of the graph is (h / e).</li>
+                        <li>Calculate h = slope * e (where e = 1.602 x 10^-19 C).</li>
+                    </ol>
+                `,
+                observations: "Stopping potential increases linearly with the frequency of incident light. There is a minimum threshold frequency below which no photoemission occurs.",
+                result: "Planck's constant (h) was found to be [Your Value] J·s.",
+                precautions: [
+                    "Perform the experiment in a dark environment.",
+                    "Ensure the photocell window is clean.",
+                    "Allow the lamp to stabilize before taking readings."
+                ]
+            },
+            hallEffect: {
+                title: "Hall Effect",
+                aim: "To determine the Hall coefficient and charge carrier concentration of a given semiconductor.",
+                apparatus: "Hall probe (semiconductor crystal), a constant current source, a high-resistance voltmeter (millivoltmeter), an electromagnet, a gaussmeter.",
+                theory: "When a current-carrying conductor is placed in a perpendicular magnetic field, a voltage (Hall voltage) is generated across the conductor, in a direction perpendicular to both the current and the magnetic field. This is the Hall Effect.",
+                formulae: "Hall Voltage (V_H) = (I * B) / (n * q * t) <br> Hall Coefficient (R_H) = 1 / (n * q)",
+                procedure: `
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li>Place the Hall probe in the uniform magnetic field of the electromagnet.</li>
+                        <li>Pass a known constant current (I) through the probe.</li>
+                        <li>Measure the Hall voltage (V_H) using the millivoltmeter.</li>
+                        <li>Measure the magnetic field (B) using the gaussmeter.</li>
+                        <li>Vary the magnetic field (B) and record the corresponding V_H.</li>
+                        <li>Plot a graph of V_H (y-axis) vs. B (x-axis). The slope is (I / nqt).</li>
+                        <li>Calculate the carrier concentration (n).</li>
+                    </ol>
+                `,
+                observations: "The Hall voltage is directly proportional to both the current (I) and the magnetic field (B). The polarity of V_H indicates the type of charge carrier (positive for p-type, negative for n-type).",
+                result: "The Hall coefficient (R_H) is [Value] m³/C. The carrier concentration (n) is [Value] m⁻³.",
+                precautions: [
+                    "The probe should be placed exactly perpendicular to the magnetic field.",
+                    "The current (I) should be kept low to avoid heating effects.",
+                    "The Hall voltage is very small, so a sensitive voltmeter is required."
+                ]
+            },
+            // --- Adding placeholder data for the rest ---
+            ultrasonicInterferometer: {
+                title: "Ultrasonic Interferometer",
+                aim: "To determine the velocity of ultrasonic waves in a liquid.",
+                apparatus: "Ultrasonic interferometer (RF oscillator, quartz crystal, reflector), the given liquid (e.g., water, kerosene).",
+                theory: "An ultrasonic interferometer uses a quartz crystal to generate high-frequency sound waves. These waves are reflected back by a movable reflector, creating standing waves in the liquid. By measuring the distance between consecutive nodes (or antinodes), the wavelength (λ) can be found. Velocity (v) is then calculated as v = f * λ, where f is the known frequency.",
+                formulae: "v = f * λ <br> λ = 2 * d",
+                procedure: `<p>...Procedure details...</p>`,
+                observations: "The anode current of the oscillator shows sharp maxima and minima as the reflector is moved.",
+                result: "The velocity of ultrasonic waves in [Liquid] is [Value] m/s.",
+                precautions: ["Ensure the reflector is parallel to the crystal.", "Move the micrometer screw slowly and in one direction to avoid backlash error."]
+            },
+            lcrResonance: {
+                title: "LCR Resonance Circuit",
+                aim: "To study the frequency response of a series LCR circuit and determine the resonant frequency and quality factor (Q).",
+                apparatus: "An inductor (L), a capacitor (C), a resistor (R), an AC signal generator, an AC voltmeter or oscilloscope.",
+                theory: "A series LCR circuit exhibits resonance, a condition where the inductive reactance (X_L) equals the capacitive reactance (X_C). At this resonant frequency (f_r), the total impedance (Z) is at its minimum (Z = R), and the current in the circuit is maximum.",
+                formulae: "f_r = 1 / (2 * π * sqrt(LC)) <br> Q-factor = (1 / R) * sqrt(L / C)",
+                procedure: `<p>...Procedure details...</p>`,
+                observations: "The current in the circuit peaks sharply at a specific frequency (the resonant frequency).",
+                result: "The resonant frequency is [Value] Hz. The Q-factor is [Value].",
+                precautions: ["Set the signal generator to a low amplitude to avoid distortion.", "Take more readings near the resonant frequency to get a sharp curve."]
+            },
+            laserDiffraction: {
+                title: "Laser Diffraction (Single Slit)",
+                aim: "To determine the width of a single slit using laser diffraction.",
+                apparatus: "Helium-Neon (He-Ne) laser, a single slit of unknown width, an optical bench, a screen.",
+                theory: "When monochromatic light passes through a narrow single slit, it diffracts and produces a characteristic pattern of a bright central maximum, flanked by alternating dark and dimmer bright fringes. The condition for the minima (dark fringes) is given by a * sin(θ) = n * λ.",
+                formulae: "a * sin(θ) = n * λ <br> For small angles, a * (x / D) = n * λ",
+                procedure: `<p>...Procedure details...</p>`,
+                observations: "A very bright and wide central maximum is observed, with much dimmer secondary maxima on either side.",
+                result: "The width of the single slit (a) is [Value] mm.",
+                precautions: ["Do not look directly into the laser.", "The screen should be far from the slit for the small angle approximation to be valid."]
+            },
+            magneticFieldCoil: {
+                title: "Magnetic Field of Circular Coil",
+                aim: "To study the variation of the magnetic field along the axis of a circular coil carrying current.",
+                apparatus: "A circular coil, a DC power supply, an ammeter, a magnetometer or Hall probe (gaussmeter), a ruler or optical bench.",
+                theory: "A circular coil carrying current (I) produces a magnetic field (B) along its axis. The field is maximum at the center of the coil and decreases as one moves away from the center along the axis.",
+                formulae: "B(x) = (μ₀ * N * I * R²) / (2 * (R² + x²)^(3/2))",
+                procedure: `<p>...Procedure details...</p>`,
+                observations: "The magnetic field is maximum at x=0 (center) and decreases symmetrically on both sides.",
+                result: "The experimental variation of B with x matches the theoretical formula.",
+                precautions: ["Align the magnetometer or probe correctly along the axis.", "Avoid any other magnetic materials near the setup."]
+            },
+            bandGapSemiconductor: {
+                title: "Band Gap of Semiconductor",
+                aim: "To determine the energy band gap (E_g) of a semiconductor (e.g., a p-n junction diode) using the reverse-biased current method.",
+                apparatus: "A p-n junction diode (e.g., 1N4007), a high-voltage DC power supply, a microammeter, a thermometer, an oven or heating setup.",
+                theory: "In a reverse-biased p-n junction, a small reverse saturation current (I_s) flows due to minority charge carriers. This current is highly dependent on temperature. By measuring I_s at different temperatures (T), the band gap (E_g) can be determined.",
+                formulae: "I_s = A * T³ * exp(-E_g / (k * T)) <br> ln(I_s) vs 1/T graph gives a slope of -E_g / k",
+                procedure: `<p>...Procedure details...</p>`,
+                observations: "The reverse saturation current increases exponentially with temperature.",
+                result: "The energy band gap (E_g) for the given semiconductor is [Value] eV.",
+                precautions: ["Heat the diode slowly and uniformly.", "Do not exceed the breakdown voltage of the diode."]
+            },
+            fiberOptic: {
+                title: "Fiber Optic Cable (Numerical Aperture)",
+                aim: "To determine the Numerical Aperture (NA) of a given optical fiber.",
+                apparatus: "A fiber optic kit (including laser source, optical fiber, NA measurement jig with screen), a ruler.",
+                theory: "The Numerical Aperture (NA) is a measure of the ability of an optical fiber to capture light. It is defined as the sine of the maximum acceptance angle (θ_a), which is the largest angle at which light entering the fiber will be guided by total internal reflection.",
+                formulae: "NA = sin(θ_a) <br> NA = (W / sqrt(4L² + W²))",
+                procedure: `<p>...Procedure details...</p>`,
+                observations: "The laser light emerges from the fiber in a cone, creating a circular spot on the screen.",
+                result: "The Numerical Aperture (NA) of the optical fiber is [Value].",
+                precautions: ["Ensure the laser light is properly coupled into the fiber.", "The end faces of the fiber should be clean and flat."]
+            }
+        };
+
+        // --- Page Navigation ---
+        const pages = document.querySelectorAll('.page');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+
+        function showPage(pageId) {
+            // Hide all pages
+            pages.forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show the target page
+            const targetPage = document.getElementById(`${pageId}-page`);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            } else {
+                document.getElementById('home-page').classList.add('active');
+            }
+            
+            // Close mobile menu
+            mobileMenu.classList.add('hidden');
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        // Mobile menu toggle
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // Close mobile menu when a link is clicked
+        mobileMenu.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A') {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+        
+        // Add click listeners to all nav links (for desktop)
+        document.querySelectorAll('a[onclick]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const pageId = link.getAttribute('onclick').match(/'([^']+)'/)[1];
+                showPage(pageId);
+            });
+        });
+
+        // --- Experiment Card Rendering & Search ---
+        const experimentGrid = document.getElementById('experiment-grid');
+        const searchBox = document.getElementById('search-box');
+
+        function renderExperimentCards(filter = '') {
+            experimentGrid.innerHTML = ''; // Clear existing cards
+            const normalizedFilter = filter.toLowerCase();
+
+            Object.keys(experimentData).forEach(key => {
+                const experiment = experimentData[key];
+                if (experiment.title.toLowerCase().includes(normalizedFilter)) {
+                    const card = document.createElement('div');
+                    card.className = 'experiment-card p-6 rounded-lg cursor-pointer';
+                    card.innerHTML = `
+                        <h2 class="text-xl font-semibold text-indigo-200 mb-2">${experiment.title}</h2>
+                        <p class="text-gray-400 text-sm mb-4">${experiment.aim.substring(0, 100)}...</p>
+                        <span class="text-indigo-400 font-medium">View Details &rarr;</span>
+                    `;
+                    card.addEventListener('click', () => showExperimentDetail(key));
+                    experimentGrid.appendChild(card);
+                }
+            });
+        }
+
+        searchBox.addEventListener('input', (e) => {
+            renderExperimentCards(e.target.value);
+        });
+
+        // --- Show Experiment Detail ---
+        function showExperimentDetail(experimentKey) {
+            const data = experimentData[experimentKey];
+            if (!data) return;
+
+            document.getElementById('detail-title').textContent = data.title;
+            document.getElementById('detail-aim').textContent = data.aim;
+            document.getElementById('detail-apparatus').textContent = data.apparatus;
+            document.getElementById('detail-theory').innerHTML = data.theory;
+            document.getElementById('detail-formulae').innerHTML = data.formulae;
+            document.getElementById('detail-procedure').innerHTML = data.procedure;
+            document.getElementById('detail-observations').textContent = data.observations;
+            document.getElementById('detail-result').textContent = data.result;
+            
+            const precautionsList = document.getElementById('detail-precautions');
+            precautionsList.innerHTML = '';
+            data.precautions.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                precautionsList.appendChild(li);
+            });
+            
+            // Placeholder for simulation
+            document.getElementById('detail-simulation').innerHTML = `
+                <div class="w-full h-64 bg-gray-900 rounded-md flex items-center justify-center text-gray-500 border-2 border-dashed border-gray-700">
+                    [Interactive 3D Simulation for<br><strong>${data.title}</strong>]
+                </div>`;
+
+            showPage('experiment-detail');
+        }
+
+        // --- Theory Page Content ---
+        function populateTheoryPage() {
+            const theoryContent = document.getElementById('theory-content');
+            theoryContent.innerHTML = ''; // Clear
+            
+            Object.keys(experimentData).forEach(key => {
+                const data = experimentData[key];
+                const section = document.createElement('div');
+                section.className = 'p-6 rounded-lg bg-gray-800/50 border border-indigo-500/30';
+                section.innerHTML = `
+                    <h2 class="text-2xl font-semibold text-indigo-300 mb-3">${data.title}</h2>
+                    <p class="mb-4">${data.theory.substring(0, 200)}...</p>
+                    <h3 class="text-lg font-semibold text-gray-300 mb-2">Key Formulae:</h3>
+                    <div class="text-md font-mono bg-gray-900/70 p-4 rounded-md">${data.formulae}</div>
+                    <button class="mt-4 text-indigo-400 font-medium" onclick="showExperimentDetail('${key}')">Go to full experiment &rarr;</button>
+                `;
+                theoryContent.appendChild(section);
+            });
+        }
+        
+        // --- Contact Form ---
+        const contactForm = document.getElementById('contact-form');
+        const formStatus = document.getElementById('form-status');
+        
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            formStatus.textContent = 'Message sent successfully! (Demo)';
+            contactForm.reset();
+            setTimeout(() => {
+                formStatus.textContent = '';
+            }, 3000);
+        });
+
+        // --- Custom Message Modal ---
+        const modal = document.getElementById('message-modal');
+        const modalText = document.getElementById('modal-message-text');
+        const modalClose = document.getElementById('modal-close-button');
+
+        function showMessage(message) {
+            modalText.textContent = message;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        modalClose.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if(e.target === modal) {
+                 modal.classList.add('hidden');
+                 modal.classList.remove('flex');
+            }
+        });
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderExperimentCards();
+            populateTheoryPage();
+            showPage('home'); // Show home page by default
+        });
+
+    </script>
+
+</body>
+</html>
